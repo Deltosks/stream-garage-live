@@ -6,11 +6,11 @@ const num=v=>typeof v==='number'&&Number.isFinite(v)?v:0;
 const url=v=>{try{const u=new URL(v);return u.protocol==='https:'&&!u.username&&!u.password?u.href:'';}catch{return '';}};
 export function publicSnapshot(raw,now=Date.now()){
  if(raw?.schema!==3||!Array.isArray(raw.library)||!Array.isArray(raw.queue)||!Array.isArray(raw.archive)||!Number.isFinite(raw.serverTime)||Math.abs(now-raw.serverTime)>600000)throw Error('Public state is invalid or stale; preserving the previous deployment.');
- const r=raw.round;
+ const r=raw.round,active=!!r&&['voting','wheel'].includes(r.phase);
  return {format:'garage-public-monitor-v1',updatedAt:raw.serverTime,fetchedAt:now,revision:num(raw.revision),channel:'deltosks',
   connection:{connected:raw.connection?.connected===true,revoked:raw.connection?.revoked===true},
-  round:r?{id:str(r.id),number:num(r.number),phase:str(r.phase),mode:str(r.mode),top:num(r.top),min:num(r.min),maxUserPoints:num(r.maxUserPoints),totalWeight:num(r.totalWeight),voters:num(r.voters),invalidated:r.invalidated===true}:null,
-  games:raw.library.slice(0,2000).map(g=>({id:str(g.id),title:str(g.title),status:str(g.status),weight:num(g.weight),points:num(g.points),supporters:num(g.supporters),chance:Math.max(0,Math.min(1,num(g.chance))),inWheel:g.inWheel===true,reason:str(g.reason,300)})),
+  round:active?{id:str(r.id),number:num(r.number),phase:str(r.phase),mode:str(r.mode),top:num(r.top),min:num(r.min),maxUserPoints:num(r.maxUserPoints),totalWeight:num(r.totalWeight),voters:num(r.voters),invalidated:r.invalidated===true}:null,
+  games:raw.library.slice(0,2000).map(g=>({id:str(g.id),title:str(g.title),status:str(g.status),weight:active?num(g.weight):0,points:active?num(g.points):0,supporters:active?num(g.supporters):0,chance:active?Math.max(0,Math.min(1,num(g.chance))):0,inWheel:active&&g.inWheel===true,reason:str(g.reason,300)})),
   queue:raw.queue.map(q=>({id:str(q.id),title:str(q.title),goal:str(q.goal),status:str(q.status),outcome:str(q.outcome),minutesPlayed:num(q.minutesPlayed),startBy:num(q.startBy),progress:str(q.progress,500),reason:str(q.reason,300),vodUrl:url(q.vodUrl)})),
   history:raw.archive.slice(-30).map(h=>({id:str(h.id),number:num(h.number),at:num(h.at),title:str(h.winner?.title),chance:num(h.result?.chance),games:Array.isArray(h.candidates)?h.candidates.length:0}))};
 }
