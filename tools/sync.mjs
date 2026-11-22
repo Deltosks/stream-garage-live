@@ -6,7 +6,7 @@ const num=v=>typeof v==='number'&&Number.isFinite(v)?v:0;
 const url=v=>{try{const u=new URL(v);return u.protocol==='https:'&&!u.username&&!u.password?u.href:'';}catch{return '';}};
 export function publicSnapshot(raw,now=Date.now()){
  if(raw?.schema!==3||!Array.isArray(raw.library)||!Array.isArray(raw.queue)||!Array.isArray(raw.archive)||!Number.isFinite(raw.serverTime)||Math.abs(now-raw.serverTime)>600000)throw Error('Public state is invalid or stale; preserving the previous deployment.');
- const r=raw.round,active=!!r&&['voting','wheel'].includes(r.phase);
+ const r=raw.round,active=r?.mode==='points'&&['voting','wheel'].includes(r.phase);
  return {format:'garage-public-monitor-v1',updatedAt:raw.serverTime,fetchedAt:now,revision:num(raw.revision),channel:'deltosks',
   connection:{connected:raw.connection?.connected===true,revoked:raw.connection?.revoked===true},
   round:active?{id:str(r.id),number:num(r.number),phase:str(r.phase),mode:str(r.mode),top:num(r.top),min:num(r.min),maxUserPoints:num(r.maxUserPoints),totalWeight:num(r.totalWeight),voters:num(r.voters),invalidated:r.invalidated===true}:null,
